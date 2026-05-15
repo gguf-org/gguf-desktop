@@ -5,6 +5,8 @@ an OpenAI-compatible HTTP API. The UI provides model selection,
 runtime settings, server lifecycle controls, endpoint reference, and
 live log viewing.
 
+![screenshot](https://raw.githubusercontent.com/gguf-org/gguf-desktop/master/demo.gif)
+
 ## Features
 
 - Select a GGUF model file from disk.
