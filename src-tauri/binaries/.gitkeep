@@ -1,0 +1,16 @@
+Place llama-server binaries here for production builds.
+
+During development (tauri dev), the app will automatically search sibling
+project directories (e.g. ../radiology-desktop/src-tauri/binaries/) for
+the llama-server binary.
+
+For production bundling, copy these files here:
+  - llama-server-x86_64-pc-windows-msvc.exe  (Windows)
+  - llama-server-x86_64-unknown-linux-gnu     (Linux)
+  - llama-server-aarch64-apple-darwin         (macOS ARM)
+  - llama-server-x86_64-apple-darwin          (macOS Intel)
+
+And all companion DLLs (Windows):
+  ggml.dll, ggml-base.dll, llama.dll, llama-common.dll, mtmd.dll,
+  ggml-cuda.dll, cudart64_12.dll, cublas64_12.dll, cublasLt64_12.dll,
+  libomp140.x86_64.dll, ggml-cpu-*.dll, ggml-rpc.dll

@@ -1,0 +1,74 @@
+{
+  "$schema": "../node_modules/@tauri-apps/cli/config.schema.json",
+  "productName": "GGUF Desktop",
+  "version": "1.0.0",
+  "identifier": "com.gguf.desktop",
+  "build": {
+    "frontendDist": "../dist",
+    "devUrl": "http://localhost:3000",
+    "beforeDevCommand": "npm run dev",
+    "beforeBuildCommand": "npm run build"
+  },
+  "app": {
+    "windows": [
+      {
+        "title": "GGUF Desktop",
+        "width": 1024,
+        "height": 720,
+        "minWidth": 800,
+        "minHeight": 600,
+        "resizable": true,
+        "fullscreen": false
+      }
+    ],
+    "security": {
+      "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": ["dmg"],
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "externalBin": [
+      "binaries/llama-server"
+    ],
+    "resources": {
+      "binaries/libggml.dylib": "libggml.dylib",
+      "binaries/libggml.0.dylib": "libggml.0.dylib",
+      "binaries/libggml.0.11.1.dylib": "libggml.0.11.1.dylib",
+      "binaries/libggml-base.dylib": "libggml-base.dylib",
+      "binaries/libggml-base.0.dylib": "libggml-base.0.dylib",
+      "binaries/libggml-base.0.11.1.dylib": "libggml-base.0.11.1.dylib",
+      "binaries/libggml-blas.dylib": "libggml-blas.dylib",
+      "binaries/libggml-blas.0.dylib": "libggml-blas.0.dylib",
+      "binaries/libggml-blas.0.11.1.dylib": "libggml-blas.0.11.1.dylib",
+      "binaries/libggml-cpu.dylib": "libggml-cpu.dylib",
+      "binaries/libggml-cpu.0.dylib": "libggml-cpu.0.dylib",
+      "binaries/libggml-cpu.0.11.1.dylib": "libggml-cpu.0.11.1.dylib",
+      "binaries/libggml-metal.dylib": "libggml-metal.dylib",
+      "binaries/libggml-metal.0.dylib": "libggml-metal.0.dylib",
+      "binaries/libggml-metal.0.11.1.dylib": "libggml-metal.0.11.1.dylib",
+      "binaries/libggml-rpc.dylib": "libggml-rpc.dylib",
+      "binaries/libggml-rpc.0.dylib": "libggml-rpc.0.dylib",
+      "binaries/libggml-rpc.0.11.1.dylib": "libggml-rpc.0.11.1.dylib",
+      "binaries/libllama.dylib": "libllama.dylib",
+      "binaries/libllama.0.dylib": "libllama.0.dylib",
+      "binaries/libllama.0.0.9113.dylib": "libllama.0.0.9113.dylib",
+      "binaries/libllama-common.dylib": "libllama-common.dylib",
+      "binaries/libllama-common.0.dylib": "libllama-common.0.dylib",
+      "binaries/libllama-common.0.0.9113.dylib": "libllama-common.0.0.9113.dylib",
+      "binaries/libmtmd.dylib": "libmtmd.dylib",
+      "binaries/libmtmd.0.dylib": "libmtmd.0.dylib",
+      "binaries/libmtmd.0.0.9113.dylib": "libmtmd.0.0.9113.dylib"
+    },
+    "macOS": {
+      "minimumSystemVersion": "11.0"
+    }
+  }
+}
