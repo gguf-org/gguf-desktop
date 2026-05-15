@@ -176,7 +176,27 @@ struct ServerArgs {
     chat_template_file: Option<String>,
 }
 
+fn ensure_executable(path: &Path) -> Result<(), String> {
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::PermissionsExt;
+        let meta = std::fs::metadata(path).map_err(|e| format!("Failed to read binary metadata: {e}"))?;
+        let mode = meta.permissions().mode();
+        if mode & 0o111 == 0 {
+            let mut perms = meta.permissions();
+            perms.set_mode(mode | 0o111);
+            std::fs::set_permissions(path, perms)
+                .map_err(|e| format!("Failed to set executable bit on llama-server: {e}"))?;
+        }
+    }
+    #[cfg(not(unix))]
+    let _ = path;
+    Ok(())
+}
+
 fn spawn_llama_server(binary: &Path, args: &ServerArgs, dylib_dir: Option<PathBuf>) -> Result<ManagedChild, String> {
+    ensure_executable(binary)?;
+
     let log_path = std::env::temp_dir().join(format!(
         "gguf-desktop-{}.log",
         SystemTime::now()
