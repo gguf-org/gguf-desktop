@@ -618,8 +618,134 @@ interface ModelPanelProps {
 }
 
 function ModelPanel({ modelConfig, setModelConfig }: ModelPanelProps) {
+  const modelDropRef = useRef<HTMLDivElement | null>(null);
+  const mmprojDropRef = useRef<HTMLDivElement | null>(null);
+  const [modelDropActive, setModelDropActive] = useState(false);
+  const [modelDropError, setModelDropError] = useState<string | null>(null);
+  const [mmprojDropActive, setMmprojDropActive] = useState(false);
+  const [mmprojDropError, setMmprojDropError] = useState<string | null>(null);
+
   const update = <K extends keyof ModelConfig>(key: K, value: ModelConfig[K]) =>
     setModelConfig((prev) => ({ ...prev, [key]: value }));
+
+  const acceptGgufPath = useCallback(
+    (key: "modelPath" | "mmprojPath", path: string) => {
+      if (!path.toLowerCase().endsWith(".gguf")) {
+        if (key === "modelPath") {
+          setModelDropError("Drop a .gguf model file.");
+        } else {
+          setMmprojDropError("Drop a .gguf projector file.");
+        }
+        return;
+      }
+
+      setModelConfig((prev) => ({ ...prev, [key]: path }));
+      if (key === "modelPath") {
+        setModelDropError(null);
+      } else {
+        setMmprojDropError(null);
+      }
+    },
+    [setModelConfig]
+  );
+
+  const isInsideDropArea = useCallback(
+    (
+      ref: React.RefObject<HTMLDivElement | null>,
+      position: { x: number; y: number }
+    ) => {
+      const element = ref.current;
+      if (!element) return false;
+
+      const rect = element.getBoundingClientRect();
+      const scale = window.devicePixelRatio || 1;
+      const x = position.x / scale;
+      const y = position.y / scale;
+
+      return (
+        x >= rect.left &&
+        x <= rect.right &&
+        y >= rect.top &&
+        y <= rect.bottom
+      );
+    },
+    []
+  );
+
+  useEffect(() => {
+    let unlisten: (() => void) | undefined;
+    let disposed = false;
+
+    import("@tauri-apps/api/window")
+      .then(({ getCurrentWindow }) =>
+        getCurrentWindow().onDragDropEvent(({ payload }) => {
+          if (payload.type === "enter") {
+            setModelDropActive(isInsideDropArea(modelDropRef, payload.position));
+            setMmprojDropActive(
+              isInsideDropArea(mmprojDropRef, payload.position)
+            );
+            return;
+          }
+
+          if (payload.type === "over") {
+            setModelDropActive(isInsideDropArea(modelDropRef, payload.position));
+            setMmprojDropActive(
+              isInsideDropArea(mmprojDropRef, payload.position)
+            );
+            return;
+          }
+
+          if (payload.type === "drop") {
+            const droppedOnModel = isInsideDropArea(
+              modelDropRef,
+              payload.position
+            );
+            const droppedOnMmproj = isInsideDropArea(
+              mmprojDropRef,
+              payload.position
+            );
+            setModelDropActive(false);
+            setMmprojDropActive(false);
+            if (!droppedOnModel && !droppedOnMmproj) return;
+
+            const ggufPath = payload.paths.find((path) =>
+              path.toLowerCase().endsWith(".gguf")
+            );
+            if (ggufPath) {
+              acceptGgufPath(
+                droppedOnModel ? "modelPath" : "mmprojPath",
+                ggufPath
+              );
+            } else {
+              if (droppedOnModel) {
+                setModelDropError("Drop a .gguf model file.");
+              } else {
+                setMmprojDropError("Drop a .gguf projector file.");
+              }
+            }
+            return;
+          }
+
+          setModelDropActive(false);
+          setMmprojDropActive(false);
+        })
+      )
+      .then((cleanup) => {
+        if (disposed) {
+          cleanup();
+        } else {
+          unlisten = cleanup;
+        }
+      })
+      .catch(() => {
+        // Browser dev mode falls back to the HTML drop handlers below.
+      });
+
+    return () => {
+      disposed = true;
+      unlisten?.();
+    };
+  }, [acceptGgufPath, isInsideDropArea]);
 
   const openGguf = async () => {
     try {
@@ -628,7 +754,7 @@ function ModelPanel({ modelConfig, setModelConfig }: ModelPanelProps) {
         filters: [{ name: "GGUF Model", extensions: ["gguf"] }],
         title: "Select GGUF Model File",
       });
-      if (path && typeof path === "string") update("modelPath", path);
+      if (path && typeof path === "string") acceptGgufPath("modelPath", path);
     } catch (err) {
       console.error("File dialog error:", err);
     }
@@ -641,7 +767,7 @@ function ModelPanel({ modelConfig, setModelConfig }: ModelPanelProps) {
         filters: [{ name: "Vision Projector", extensions: ["gguf"] }],
         title: "Select Vision Projector (mmproj)",
       });
-      if (path && typeof path === "string") update("mmprojPath", path);
+      if (path && typeof path === "string") acceptGgufPath("mmprojPath", path);
     } catch (err) {
       console.error("File dialog error:", err);
     }
@@ -666,6 +792,24 @@ function ModelPanel({ modelConfig, setModelConfig }: ModelPanelProps) {
     }
   };
 
+  const handleBrowserGgufDrop = (
+    key: "modelPath" | "mmprojPath",
+    event: React.DragEvent<HTMLDivElement>
+  ) => {
+    event.preventDefault();
+    if (key === "modelPath") {
+      setModelDropActive(false);
+    } else {
+      setMmprojDropActive(false);
+    }
+
+    const file = event.dataTransfer.files[0] as
+      | (File & { path?: string })
+      | undefined;
+    const path = file?.path || file?.name;
+    if (path) acceptGgufPath(key, path);
+  };
+
   return (
     <div className="space-y-5">
       {/* GGUF Model */}
@@ -680,12 +824,47 @@ function ModelPanel({ modelConfig, setModelConfig }: ModelPanelProps) {
             <p className="text-xs text-zinc-500">Model file</p>
             <span className="text-xs font-mono text-zinc-600">.gguf</span>
           </div>
-          <FilePickerRow
-            value={modelConfig.modelPath}
-            onClear={() => update("modelPath", "")}
-            onBrowse={openGguf}
-            placeholder="No model selected…"
-          />
+          <div
+            ref={modelDropRef}
+            onDragEnter={(event) => {
+              event.preventDefault();
+              setModelDropActive(true);
+            }}
+            onDragOver={(event) => {
+              event.preventDefault();
+              setModelDropActive(true);
+            }}
+            onDragLeave={(event) => {
+              if (!event.currentTarget.contains(event.relatedTarget as Node)) {
+                setModelDropActive(false);
+              }
+            }}
+            onDrop={(event) => handleBrowserGgufDrop("modelPath", event)}
+            className={cn(
+              "rounded-xl border border-dashed p-3 transition-colors",
+              modelDropActive
+                ? "border-emerald-500 bg-emerald-950/30"
+                : "border-zinc-700 bg-zinc-950/30"
+            )}
+          >
+            <FilePickerRow
+              value={modelConfig.modelPath}
+              onClear={() => {
+                update("modelPath", "");
+                setModelDropError(null);
+              }}
+              onBrowse={openGguf}
+              placeholder="Drop GGUF file here or Browse"
+            />
+            <p
+              className={cn(
+                "mt-2 text-xs",
+                modelDropError ? "text-rose-300" : "text-zinc-500"
+              )}
+            >
+              {modelDropError || "Drag and drop a .gguf model file here."}
+            </p>
+          </div>
         </div>
 
         <div className="space-y-2">
@@ -699,12 +878,47 @@ function ModelPanel({ modelConfig, setModelConfig }: ModelPanelProps) {
               <Eye size={9} /> enables vision
             </span>
           </div>
-          <FilePickerRow
-            value={modelConfig.mmprojPath}
-            onClear={() => update("mmprojPath", "")}
-            onBrowse={openMmproj}
-            placeholder="No projector selected…"
-          />
+          <div
+            ref={mmprojDropRef}
+            onDragEnter={(event) => {
+              event.preventDefault();
+              setMmprojDropActive(true);
+            }}
+            onDragOver={(event) => {
+              event.preventDefault();
+              setMmprojDropActive(true);
+            }}
+            onDragLeave={(event) => {
+              if (!event.currentTarget.contains(event.relatedTarget as Node)) {
+                setMmprojDropActive(false);
+              }
+            }}
+            onDrop={(event) => handleBrowserGgufDrop("mmprojPath", event)}
+            className={cn(
+              "rounded-xl border border-dashed p-3 transition-colors",
+              mmprojDropActive
+                ? "border-emerald-500 bg-emerald-950/30"
+                : "border-zinc-700 bg-zinc-950/30"
+            )}
+          >
+            <FilePickerRow
+              value={modelConfig.mmprojPath}
+              onClear={() => {
+                update("mmprojPath", "");
+                setMmprojDropError(null);
+              }}
+              onBrowse={openMmproj}
+              placeholder="Drop projector GGUF here or Browse"
+            />
+            <p
+              className={cn(
+                "mt-2 text-xs",
+                mmprojDropError ? "text-rose-300" : "text-zinc-500"
+              )}
+            >
+              {mmprojDropError || "Drag and drop a .gguf projector file here."}
+            </p>
+          </div>
         </div>
       </div>
 
