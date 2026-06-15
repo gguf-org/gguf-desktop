@@ -228,6 +228,8 @@ src-tauri/binaries/llama-server-aarch64-apple-darwin
 `build.rs` injects the Cargo target triple into `TARGET_TRIPLE` so the backend
 can resolve triple-suffixed binaries.
 
+![screenshot](https://raw.githubusercontent.com/gguf-org/gguf-desktop/master/demo1.gif)
+
 ## Packaging Notes
 
 `src-tauri/tauri.conf.json` configures:
