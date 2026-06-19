@@ -273,3 +273,5 @@ the machine's LAN IP from the client device.
 ## License
 
 This project is licensed under the MIT License. See `LICENSE`.
+
+![screenshot](https://raw.githubusercontent.com/gguf-org/gguf-desktop/master/pizza.jpg)
