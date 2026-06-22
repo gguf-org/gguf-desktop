@@ -245,6 +245,7 @@ On macOS, the backend sets `DYLD_LIBRARY_PATH` to include the binary/resource
 locations so `llama-server` can load the bundled `.dylib` files.
 
 ![screenshot](https://raw.githubusercontent.com/gguf-org/gguf-desktop/master/demo1.gif)
+*experimental diffusion panel only available for cuda13 recently 
 
 ## Troubleshooting
 
